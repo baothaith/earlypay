@@ -1,54 +1,80 @@
 /**
  * DocsViewer — in-app documentation browser.
- * Renders markdown files from /docs/ using the `marked` parser.
+ * Renders markdown files from /docs/ (EN) and /docs/vi/ (VI) using `marked`.
+ * Language toggle persists to localStorage['ep-docs-lang'].
  * Navigation: sidebar list of all docs, main panel renders the selected doc.
  * Accessible at /#/docs (hash-based, no router dependency).
  */
 import { useState, useEffect, useMemo } from 'react'
 import { marked } from 'marked'
-import { BookOpen, ChevronLeft, Menu, X, ExternalLink } from 'lucide-react'
+import { BookOpen, ChevronLeft, Menu, X, ExternalLink, Languages } from 'lucide-react'
 import { EarlyPayLogo } from '@/components/Logo'
 
-// ── Doc manifest ─────────────────────────────────────────────────────────────
-// Each entry maps to a file in /docs/ served as a static asset from /public/docs/
-// We copy docs to public/docs/ via a vite plugin alternative: just import as raw text.
-// Since Vite can import ?raw, we inline all docs at build time — no network fetch needed.
+// ── English docs (inline at build time via Vite ?raw) ─────────────────────
+import enDoc00 from '../../docs/00-index.md?raw'
+import enDoc01 from '../../docs/01-overview.md?raw'
+import enDoc02 from '../../docs/02-features.md?raw'
+import enDoc03 from '../../docs/03-feature-specs.md?raw'
+import enDoc04 from '../../docs/04-tech-stack.md?raw'
+import enDoc05 from '../../docs/05-design-system.md?raw'
+import enDoc06 from '../../docs/06-ui-ux-guidelines.md?raw'
+import enDoc07 from '../../docs/07-naming-conventions.md?raw'
+import enDoc08 from '../../docs/08-coding-style.md?raw'
+import enDoc09 from '../../docs/09-coding-rules.md?raw'
+import enDoc10 from '../../docs/10-commit-conventions.md?raw'
+import enDoc11 from '../../docs/11-code-review.md?raw'
+import enDoc12 from '../../docs/12-quality-standards.md?raw'
 
-import doc00 from '../../docs/00-index.md?raw'
-import doc01 from '../../docs/01-overview.md?raw'
-import doc02 from '../../docs/02-features.md?raw'
-import doc03 from '../../docs/03-feature-specs.md?raw'
-import doc04 from '../../docs/04-tech-stack.md?raw'
-import doc05 from '../../docs/05-design-system.md?raw'
-import doc06 from '../../docs/06-ui-ux-guidelines.md?raw'
-import doc07 from '../../docs/07-naming-conventions.md?raw'
-import doc08 from '../../docs/08-coding-style.md?raw'
-import doc09 from '../../docs/09-coding-rules.md?raw'
-import doc10 from '../../docs/10-commit-conventions.md?raw'
-import doc11 from '../../docs/11-code-review.md?raw'
-import doc12 from '../../docs/12-quality-standards.md?raw'
+// ── Vietnamese docs ───────────────────────────────────────────────────────
+import viDoc00 from '../../docs/vi/00-index.md?raw'
+import viDoc01 from '../../docs/vi/01-overview.md?raw'
+import viDoc02 from '../../docs/vi/02-features.md?raw'
+import viDoc03 from '../../docs/vi/03-feature-specs.md?raw'
+import viDoc04 from '../../docs/vi/04-tech-stack.md?raw'
+import viDoc05 from '../../docs/vi/05-design-system.md?raw'
+import viDoc06 from '../../docs/vi/06-ui-ux-guidelines.md?raw'
+import viDoc07 from '../../docs/vi/07-naming-conventions.md?raw'
+import viDoc08 from '../../docs/vi/08-coding-style.md?raw'
+import viDoc09 from '../../docs/vi/09-coding-rules.md?raw'
+import viDoc10 from '../../docs/vi/10-commit-conventions.md?raw'
+import viDoc11 from '../../docs/vi/11-code-review.md?raw'
+import viDoc12 from '../../docs/vi/12-quality-standards.md?raw'
 
-interface DocEntry {
+type Lang = 'en' | 'vi'
+
+interface DocMeta {
   id: string
-  title: string
-  content: string
+  titleEn: string
+  titleVi: string
+  en: string
+  vi: string
 }
 
-const DOCS: DocEntry[] = [
-  { id: '00', title: 'Index',                  content: doc00 },
-  { id: '01', title: 'Overview & Goals',       content: doc01 },
-  { id: '02', title: 'Features',               content: doc02 },
-  { id: '03', title: 'Feature Specs',          content: doc03 },
-  { id: '04', title: 'Tech Stack',             content: doc04 },
-  { id: '05', title: 'Design System',          content: doc05 },
-  { id: '06', title: 'UI/UX Guidelines',       content: doc06 },
-  { id: '07', title: 'Naming Conventions',     content: doc07 },
-  { id: '08', title: 'Coding Style',           content: doc08 },
-  { id: '09', title: 'Coding Rules',           content: doc09 },
-  { id: '10', title: 'Commit Conventions',     content: doc10 },
-  { id: '11', title: 'Code Review',            content: doc11 },
-  { id: '12', title: 'Quality Standards',      content: doc12 },
+const DOCS: DocMeta[] = [
+  { id: '00', titleEn: 'Index',                  titleVi: 'Mục Lục',            en: enDoc00, vi: viDoc00 },
+  { id: '01', titleEn: 'Overview & Goals',       titleVi: 'Tổng Quan & Mục Tiêu', en: enDoc01, vi: viDoc01 },
+  { id: '02', titleEn: 'Features',               titleVi: 'Tính Năng',          en: enDoc02, vi: viDoc02 },
+  { id: '03', titleEn: 'Feature Specs',          titleVi: 'Đặc Tả Tính Năng',  en: enDoc03, vi: viDoc03 },
+  { id: '04', titleEn: 'Tech Stack',             titleVi: 'Tech Stack',         en: enDoc04, vi: viDoc04 },
+  { id: '05', titleEn: 'Design System',          titleVi: 'Design System',      en: enDoc05, vi: viDoc05 },
+  { id: '06', titleEn: 'UI/UX Guidelines',       titleVi: 'Hướng Dẫn UI/UX',   en: enDoc06, vi: viDoc06 },
+  { id: '07', titleEn: 'Naming Conventions',     titleVi: 'Quy Ước Đặt Tên',   en: enDoc07, vi: viDoc07 },
+  { id: '08', titleEn: 'Coding Style',           titleVi: 'Phong Cách Code',    en: enDoc08, vi: viDoc08 },
+  { id: '09', titleEn: 'Coding Rules',           titleVi: 'Quy Tắc Code',       en: enDoc09, vi: viDoc09 },
+  { id: '10', titleEn: 'Commit Conventions',     titleVi: 'Quy Ước Commit',     en: enDoc10, vi: viDoc10 },
+  { id: '11', titleEn: 'Code Review',            titleVi: 'Quy Trình Review',   en: enDoc11, vi: viDoc11 },
+  { id: '12', titleEn: 'Quality Standards',      titleVi: 'Tiêu Chuẩn Chất Lượng', en: enDoc12, vi: viDoc12 },
 ]
+
+const LANG_STORAGE_KEY = 'ep-docs-lang'
+
+function getSavedLang(): Lang {
+  try {
+    const saved = localStorage.getItem(LANG_STORAGE_KEY)
+    if (saved === 'en' || saved === 'vi') return saved
+  } catch { /* ignore */ }
+  return 'en'
+}
 
 // Configure marked
 marked.setOptions({ gfm: true, breaks: false })
@@ -58,21 +84,26 @@ interface Props {
 }
 
 export function DocsViewer({ onClose }: Props) {
-  const [activeId, setActiveId] = useState('00')
-  const [navOpen, setNavOpen] = useState(false)
+  const [activeId, setActiveId]   = useState('00')
+  const [navOpen, setNavOpen]     = useState(false)
+  const [lang, setLangState]      = useState<Lang>(getSavedLang)
 
-  // Parse markdown once per doc
+  function setLang(l: Lang) {
+    setLangState(l)
+    try { localStorage.setItem(LANG_STORAGE_KEY, l) } catch { /* ignore */ }
+    document.getElementById('docs-content')?.scrollTo({ top: 0 })
+  }
+
+  // Parse markdown once per doc+lang combo
   const html = useMemo(() => {
     const doc = DOCS.find((d) => d.id === activeId)
     if (!doc) return ''
-    return marked.parse(doc.content) as string
-  }, [activeId])
+    return marked.parse(doc[lang]) as string
+  }, [activeId, lang])
 
-  // Close mobile nav on doc select
   function selectDoc(id: string) {
     setActiveId(id)
     setNavOpen(false)
-    // Scroll content back to top
     document.getElementById('docs-content')?.scrollTo({ top: 0 })
   }
 
@@ -84,6 +115,10 @@ export function DocsViewer({ onClose }: Props) {
   }, [onClose])
 
   const activeDoc = DOCS.find((d) => d.id === activeId)
+  const activeTitle = activeDoc ? (lang === 'vi' ? activeDoc.titleVi : activeDoc.titleEn) : ''
+  const docsLabel   = lang === 'vi' ? 'Tài Liệu' : 'Documentation'
+  const backLabel   = lang === 'vi' ? 'Quay Lại' : 'Back to App'
+  const contentsLabel = lang === 'vi' ? 'Nội Dung' : 'Contents'
 
   return (
     <div
@@ -92,7 +127,7 @@ export function DocsViewer({ onClose }: Props) {
     >
       {/* ── Top bar ── */}
       <header
-        className="flex items-center gap-3 px-4 lg:px-6 flex-shrink-0"
+        className="flex items-center gap-2 px-3 lg:px-5 flex-shrink-0"
         style={{
           height: 'var(--navbar-h)',
           background: 'var(--navbar-bg-docs)',
@@ -110,40 +145,68 @@ export function DocsViewer({ onClose }: Props) {
         </button>
 
         {/* Back button */}
-        <button
-          onClick={onClose}
-          className="btn btn-ghost btn-sm gap-1.5"
-        >
+        <button onClick={onClose} className="btn btn-ghost btn-sm gap-1.5 flex-shrink-0">
           <ChevronLeft className="size-4" />
-          <span className="hidden sm:inline">Back to App</span>
+          <span className="hidden sm:inline">{backLabel}</span>
         </button>
 
-        <div
-          className="w-px h-5 flex-shrink-0"
-          style={{ background: 'var(--border)' }}
-        />
+        <div className="w-px h-5 flex-shrink-0" style={{ background: 'var(--border)' }} />
 
-        {/* Logo + title */}
-        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+        {/* Logo + breadcrumb */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <EarlyPayLogo height={20} />
-          <div
-            className="w-px h-4 flex-shrink-0"
-            style={{ background: 'var(--border)' }}
-          />
+          <div className="w-px h-4 flex-shrink-0" style={{ background: 'var(--border)' }} />
           <div className="flex items-center gap-1.5 min-w-0">
             <BookOpen className="size-3.5 flex-shrink-0" style={{ color: 'var(--subtle)' }} />
             <span className="text-sm font-semibold truncate" style={{ color: 'var(--muted)' }}>
-              Documentation
+              {docsLabel}
             </span>
             {activeDoc && (
               <>
                 <span style={{ color: 'var(--ghost)' }}>/</span>
                 <span className="text-sm font-semibold truncate" style={{ color: 'var(--ink-2)' }}>
-                  {activeDoc.title}
+                  {activeTitle}
                 </span>
               </>
             )}
           </div>
+        </div>
+
+        {/* ── Language Toggle ── */}
+        <div
+          className="flex items-center gap-0.5 rounded-lg p-0.5 flex-shrink-0"
+          style={{ background: 'var(--surface-muted)', border: '1px solid var(--border)' }}
+          role="group"
+          aria-label="Select language"
+        >
+          <button
+            onClick={() => setLang('en')}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
+            style={{
+              background: lang === 'en' ? 'var(--surface-strong)' : 'transparent',
+              color: lang === 'en' ? 'var(--ink)' : 'var(--subtle)',
+              border: lang === 'en' ? '1px solid var(--border-strong)' : '1px solid transparent',
+            }}
+            aria-pressed={lang === 'en'}
+            title="English"
+          >
+            <Languages className="size-3" />
+            EN
+          </button>
+          <button
+            onClick={() => setLang('vi')}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
+            style={{
+              background: lang === 'vi' ? 'var(--surface-strong)' : 'transparent',
+              color: lang === 'vi' ? 'var(--ink)' : 'var(--subtle)',
+              border: lang === 'vi' ? '1px solid var(--border-strong)' : '1px solid transparent',
+            }}
+            aria-pressed={lang === 'vi'}
+            title="Tiếng Việt"
+          >
+            <Languages className="size-3" />
+            VI
+          </button>
         </div>
 
         {/* GitHub link */}
@@ -151,7 +214,7 @@ export function DocsViewer({ onClose }: Props) {
           href="https://github.com/baothaith/earlypay"
           target="_blank"
           rel="noreferrer"
-          className="btn btn-ghost btn-sm hidden sm:inline-flex gap-1.5"
+          className="btn btn-ghost btn-sm hidden sm:inline-flex gap-1.5 flex-shrink-0"
           style={{ color: 'var(--subtle)' }}
         >
           <ExternalLink className="size-3.5" />
@@ -162,7 +225,7 @@ export function DocsViewer({ onClose }: Props) {
       {/* ── Body ── */}
       <div className="flex flex-1 min-h-0 relative">
 
-        {/* ── Sidebar nav (desktop always visible, mobile overlay) ── */}
+        {/* ── Sidebar nav ── */}
         <nav
           className={`
             flex-shrink-0 overflow-y-auto
@@ -170,10 +233,9 @@ export function DocsViewer({ onClose }: Props) {
             flex-col
           `}
           style={{
-            width: '240px',
+            width: '248px',
             background: 'var(--surface-panel)',
             borderRight: '1px solid var(--border)',
-            // Mobile: absolute overlay
             ...(navOpen ? {
               position: 'absolute' as const,
               inset: 0,
@@ -183,28 +245,31 @@ export function DocsViewer({ onClose }: Props) {
           }}
         >
           <div className="p-3 space-y-0.5">
-            <div className="label-caps px-3 py-2 mb-1">Contents</div>
-            {DOCS.map((doc) => (
-              <button
-                key={doc.id}
-                onClick={() => selectDoc(doc.id)}
-                className="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-sm"
-                style={{
-                  background: activeId === doc.id ? 'var(--surface-strong)' : 'transparent',
-                  color: activeId === doc.id ? 'var(--ink)' : 'var(--muted)',
-                  border: activeId === doc.id ? '1px solid var(--border-strong)' : '1px solid transparent',
-                  fontWeight: activeId === doc.id ? 600 : 400,
-                }}
-              >
-                <span
-                  className="mono text-xs flex-shrink-0 tabular-nums"
-                  style={{ color: activeId === doc.id ? 'var(--accent)' : 'var(--ghost)' }}
+            <div className="label-caps px-3 py-2 mb-1">{contentsLabel}</div>
+            {DOCS.map((doc) => {
+              const title = lang === 'vi' ? doc.titleVi : doc.titleEn
+              return (
+                <button
+                  key={doc.id}
+                  onClick={() => selectDoc(doc.id)}
+                  className="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-sm"
+                  style={{
+                    background: activeId === doc.id ? 'var(--surface-strong)' : 'transparent',
+                    color: activeId === doc.id ? 'var(--ink)' : 'var(--muted)',
+                    border: activeId === doc.id ? '1px solid var(--border-strong)' : '1px solid transparent',
+                    fontWeight: activeId === doc.id ? 600 : 400,
+                  }}
                 >
-                  {doc.id}
-                </span>
-                {doc.title}
-              </button>
-            ))}
+                  <span
+                    className="mono text-xs flex-shrink-0 tabular-nums"
+                    style={{ color: activeId === doc.id ? 'var(--accent)' : 'var(--ghost)' }}
+                  >
+                    {doc.id}
+                  </span>
+                  {title}
+                </button>
+              )
+            })}
           </div>
         </nav>
 
@@ -213,8 +278,8 @@ export function DocsViewer({ onClose }: Props) {
           id="docs-content"
           className="flex-1 overflow-y-auto px-5 sm:px-8 lg:px-12 py-8 lg:py-10"
           style={{ maxWidth: '860px' }}
+          lang={lang === 'vi' ? 'vi' : 'en'}
         >
-          {/* Render markdown as HTML */}
           <div
             className="docs-content"
             dangerouslySetInnerHTML={{ __html: html }}
@@ -277,7 +342,6 @@ export function DocsViewer({ onClose }: Props) {
           border-top: 1px solid var(--border);
           margin: 1.75rem 0;
         }
-        /* Tables */
         .docs-content table {
           width: 100%;
           border-collapse: collapse;
@@ -303,7 +367,6 @@ export function DocsViewer({ onClose }: Props) {
         }
         .docs-content tr:last-child td { border-bottom: none; }
         .docs-content tbody tr:hover td { background: var(--surface); }
-        /* Code */
         .docs-content code {
           font-family: 'JetBrains Mono', 'Menlo', monospace;
           font-size: 12px;
@@ -329,9 +392,7 @@ export function DocsViewer({ onClose }: Props) {
           font-size: 13px;
           line-height: 1.65;
         }
-        /* Checkboxes */
         .docs-content input[type="checkbox"] { margin-right: 6px; }
-        /* Blockquote */
         .docs-content blockquote {
           border-left: 3px solid var(--accent);
           margin: 0 0 1rem;
