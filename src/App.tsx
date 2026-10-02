@@ -9,6 +9,7 @@ import { PostInvoiceSheet } from '@/components/PostInvoiceSheet'
 import { Sidebar } from '@/components/Sidebar'
 import { EarlyPayLogo, LogoMark } from '@/components/Logo'
 import { DocsViewer } from '@/components/DocsViewer'
+import { Footer } from '@/components/Footer'
 import { ARC_TESTNET_CHAIN_ID } from '@/lib/constants'
 
 type Tab = 'buyer' | 'supplier'
@@ -343,6 +344,9 @@ export default function App() {
           handleRefresh()
         }}
       />
+
+      {/* ── Footer ───────────────────────────────────────────────────────────── */}
+      <Footer />
 
       {/* ── Docs Viewer ──────────────────────────────────────────────────────── */}
       {docsOpen && <DocsViewer onClose={closeDocs} />}
