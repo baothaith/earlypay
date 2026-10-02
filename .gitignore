@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+out/
+
+# Foundry build artifacts
+contracts/out/
+contracts/cache/
+
+# Environment — NEVER commit secrets
+.env
+.env.*
+!.env.example
+
+# Circle credentials & recovery files
+.circle/
+recovery_file*.dat
+*.recovery
+
+# Logs
+*.log
+/tmp/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Bun
+.bun/
+
+# Forge libraries (managed by foundry)
+lib/
+
+# Runtime capture files
+console.jsonl
+traces.jsonl

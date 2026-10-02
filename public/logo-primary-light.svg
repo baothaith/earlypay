@@ -1,0 +1,15 @@
+<!-- EarlyPay primary logo — mark + wordmark, light version -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" fill="none">
+  <defs>
+    <linearGradient id="ep-lg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3a6fa8"/>
+      <stop offset="100%" stop-color="#1d4d8a"/>
+    </linearGradient>
+  </defs>
+  <path d="M13 9 L9 9 L9 31 L13 31" stroke="url(#ep-lg)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M27 9 L31 9 L31 31 L27 31" stroke="url(#ep-lg)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M15 20 L22 14 L22 26 Z" fill="url(#ep-lg)" opacity="0.45"/>
+  <path d="M22 14 L29 20 L22 26" stroke="url(#ep-lg)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="46" y="26" font-family="'Space Grotesk', 'DM Sans', sans-serif" font-weight="700" font-size="17" letter-spacing="-0.5" fill="#0d1b2f">Early</text>
+  <text x="95" y="26" font-family="'Space Grotesk', 'DM Sans', sans-serif" font-weight="700" font-size="17" letter-spacing="-0.5" fill="#1d4d8a">Pay</text>
+</svg>

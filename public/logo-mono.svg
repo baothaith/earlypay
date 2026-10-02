@@ -1,0 +1,8 @@
+<!-- EarlyPay monochrome — pure white (works on any dark bg) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" fill="none">
+  <path d="M13 9 L9 9 L9 31 L13 31" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M27 9 L31 9 L31 31 L27 31" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M15 20 L22 14 L22 26 Z" fill="white" opacity="0.4"/>
+  <path d="M22 14 L29 20 L22 26" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="46" y="26" font-family="'Space Grotesk', 'DM Sans', sans-serif" font-weight="700" font-size="17" letter-spacing="-0.5" fill="white">EarlyPay</text>
+</svg>

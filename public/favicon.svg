@@ -1,0 +1,18 @@
+<!-- EarlyPay favicon — mark only, optimised for 16–48px.
+     Simplified to 2 brackets + arrow: reads at tiny sizes. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="7" fill="#0d1b2f"/>
+  <defs>
+    <linearGradient id="fav-g" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#cbd8f0"/>
+      <stop offset="100%" stop-color="#acc6e9"/>
+    </linearGradient>
+  </defs>
+  <!-- Left bracket -->
+  <path d="M10 7 L7 7 L7 25 L10 25" stroke="url(#fav-g)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Right bracket -->
+  <path d="M22 7 L25 7 L25 25 L22 25" stroke="url(#fav-g)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Arrow -->
+  <path d="M13 16 L18 11 L18 21 Z" fill="url(#fav-g)" opacity="0.5"/>
+  <path d="M18 11 L23 16 L18 21" stroke="url(#fav-g)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
