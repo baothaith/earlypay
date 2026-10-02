@@ -163,7 +163,7 @@ export function PostInvoiceSheet({ open, onClose, onSuccess }: Props) {
           {/* Overlay */}
           <div
             className="absolute inset-0"
-            style={{ background: 'rgba(4,9,18,0.72)', backdropFilter: 'blur(6px)' }}
+            style={{ background: 'var(--overlay-bg)', backdropFilter: 'blur(6px)' }}
           />
 
           {/* Modal panel */}
@@ -171,7 +171,7 @@ export function PostInvoiceSheet({ open, onClose, onSuccess }: Props) {
             className="relative w-full sm:max-w-xl overflow-hidden
                        rounded-t-3xl sm:rounded-3xl flex flex-col"
             style={{
-              background: '#0c1724',
+              background: 'var(--surface-panel)',
               border: '1px solid var(--border-strong)',
               boxShadow: 'var(--shadow-sheet)',
               maxHeight: '92dvh',
@@ -341,7 +341,7 @@ export function PostInvoiceSheet({ open, onClose, onSuccess }: Props) {
                             setTiers((ts) => ts.map((t, j) => (j === i ? { ...t, windowEnd: e.target.value } : t)))
                           }
                           className="w-full rounded-lg px-3 py-2 text-sm"
-                          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--ink)', colorScheme: 'dark' }}
+                          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--ink)' }}
                         />
                       </div>
                       <div className="space-y-1">
@@ -384,7 +384,7 @@ export function PostInvoiceSheet({ open, onClose, onSuccess }: Props) {
                       className="btn btn-sm"
                       style={
                         expiresAt === daysFromNow(days)
-                          ? { background: 'var(--accent)', color: '#07111f' }
+                          ? { background: 'var(--accent)', color: 'var(--on-accent)' }
                           : { background: 'var(--surface-muted)', color: 'var(--muted)', border: '1px solid var(--border)' }
                       }
                     >
@@ -397,7 +397,7 @@ export function PostInvoiceSheet({ open, onClose, onSuccess }: Props) {
                   value={expiresAt}
                   onChange={(e) => setExpiresAt(e.target.value)}
                   className="w-full rounded-xl px-4 py-3 text-sm"
-                  style={{ background: 'var(--surface-muted)', border: '1px solid var(--border)', color: 'var(--ink)', colorScheme: 'dark' }}
+                  style={{ background: 'var(--surface-muted)', border: '1px solid var(--border)', color: 'var(--ink)' }}
                 />
               </div>
 
@@ -406,7 +406,7 @@ export function PostInvoiceSheet({ open, onClose, onSuccess }: Props) {
             {/* ── Sticky footer ── */}
             <div
               className="px-6 py-4 space-y-3 flex-shrink-0"
-              style={{ borderTop: '1px solid var(--border)', background: '#0c1724' }}
+              style={{ borderTop: '1px solid var(--border)', background: 'var(--surface-panel)' }}
             >
               <button
                 onClick={handleSubmit}

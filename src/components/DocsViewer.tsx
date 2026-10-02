@@ -95,7 +95,7 @@ export function DocsViewer({ onClose }: Props) {
         className="flex items-center gap-3 px-4 lg:px-6 flex-shrink-0"
         style={{
           height: 'var(--navbar-h)',
-          background: 'rgba(8,15,28,0.92)',
+          background: 'var(--navbar-bg-docs)',
           backdropFilter: 'blur(24px)',
           borderBottom: '1px solid var(--border)',
         }}
@@ -171,7 +171,7 @@ export function DocsViewer({ onClose }: Props) {
           `}
           style={{
             width: '240px',
-            background: 'rgba(8,15,28,0.96)',
+            background: 'var(--surface-panel)',
             borderRight: '1px solid var(--border)',
             // Mobile: absolute overlay
             ...(navOpen ? {

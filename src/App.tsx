@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useAccount, useSwitchChain } from 'wagmi'
 import { ConnectKitButton } from 'connectkit'
-import { Plus, RefreshCw, AlertTriangle, LayoutDashboard, BookOpen } from 'lucide-react'
+import { Plus, RefreshCw, AlertTriangle, LayoutDashboard, BookOpen, Sun, Moon } from 'lucide-react'
+import { useTheme } from '@/hooks/useTheme'
 
 import { useInvoiceList } from '@/hooks/useInvoiceList'
 import { InvoiceCard } from '@/components/InvoiceCard'
@@ -18,6 +19,7 @@ export default function App() {
   const { address, chainId, isConnected } = useAccount()
   const { switchChain } = useSwitchChain()
   const wrongChain = isConnected && chainId !== ARC_TESTNET_CHAIN_ID
+  const { theme, toggleTheme } = useTheme()
 
   const [tab, setTab] = useState<Tab>('buyer')
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -51,7 +53,7 @@ export default function App() {
         className="flex items-center justify-between px-5 lg:px-8 gap-4 flex-shrink-0"
         style={{
           height: 'var(--navbar-h)',
-          background: 'rgba(8,15,28,0.82)',
+          background: 'var(--navbar-bg)',
           backdropFilter: 'blur(28px)',
           borderBottom: '1px solid var(--border)',
           position: 'sticky',
@@ -73,6 +75,19 @@ export default function App() {
 
         {/* Right: actions */}
         <div className="flex items-center gap-2.5">
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            className="btn btn-ghost btn-sm size-8 p-0"
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          >
+            {theme === 'dark'
+              ? <Sun  className="size-3.5" aria-hidden="true" />
+              : <Moon className="size-3.5" aria-hidden="true" />
+            }
+          </button>
+
           {/* Docs button — always visible */}
           <button
             onClick={openDocs}
@@ -122,7 +137,7 @@ export default function App() {
           <button
             onClick={() => switchChain({ chainId: ARC_TESTNET_CHAIN_ID })}
             className="btn btn-sm ml-auto"
-            style={{ background: 'var(--warning)', color: '#07111f' }}
+            style={{ background: 'var(--warning)', color: 'var(--on-accent)' }}
           >
             Switch Network
           </button>
@@ -144,7 +159,7 @@ export default function App() {
             {/* Icon */}
             <div
               className="mx-auto size-20 rounded-3xl flex items-center justify-center"
-              style={{ background: 'rgba(172,198,233,0.07)', border: '1px solid rgba(172,198,233,0.18)' }}
+              style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-strong)' }}
             >
               <LogoMark size={46} />
             </div>

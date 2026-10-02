@@ -7,13 +7,14 @@
  * capturing value early — before the window closes and the discount decays.
  *
  * The mark reads at favicon scale (16px) and scales to full hero lockup.
- * All paths use the existing Arc Dark accent palette: #acc6e9 → #cbd8f0.
+ * Text colours use CSS custom properties so Dark/Light mode works without
+ * any JavaScript — the SVG inherits the live `--ink` and `--accent` values.
  */
 
 interface LogoMarkProps {
   /** px size of the bounding square. Default 28. */
   size?: number
-  /** Override stroke/fill color. Defaults to the gradient. */
+  /** Override stroke/fill color. Defaults to var(--accent). */
   color?: string
   className?: string
 }
@@ -21,6 +22,10 @@ interface LogoMarkProps {
 /** Just the icon/mark — bracket + arrow. */
 export function LogoMark({ size = 28, color, className }: LogoMarkProps) {
   const gradId = 'ep-mark-g'
+  // When a color override is given use it directly; otherwise reference the
+  // CSS token so the mark inherits the theme without any JS state.
+  const stroke = color ?? `url(#${gradId})`
+  const fill   = color ?? `url(#${gradId})`
   return (
     <svg
       width={size}
@@ -33,14 +38,15 @@ export function LogoMark({ size = 28, color, className }: LogoMarkProps) {
     >
       <defs>
         <linearGradient id={gradId} x1="2" y1="2" x2="30" y2="30" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor={color ?? '#cbd8f0'} />
-          <stop offset="100%" stopColor={color ?? '#acc6e9'} />
+          {/* Use CSS vars so gradient adapts to dark/light */}
+          <stop offset="0%" stopColor="var(--accent-hover)" />
+          <stop offset="100%" stopColor="var(--accent)" />
         </linearGradient>
       </defs>
       {/* Left bracket */}
       <path
         d="M10 7 L7 7 L7 25 L10 25"
-        stroke={color ? color : `url(#${gradId})`}
+        stroke={stroke}
         strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -48,7 +54,7 @@ export function LogoMark({ size = 28, color, className }: LogoMarkProps) {
       {/* Right bracket */}
       <path
         d="M22 7 L25 7 L25 25 L22 25"
-        stroke={color ? color : `url(#${gradId})`}
+        stroke={stroke}
         strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -56,13 +62,13 @@ export function LogoMark({ size = 28, color, className }: LogoMarkProps) {
       {/* Arrow fill — inner chevron ghost */}
       <path
         d="M13 16 L18 11 L18 21 Z"
-        fill={color ? color : `url(#${gradId})`}
+        fill={fill}
         opacity="0.35"
       />
       {/* Arrow stroke — the forward-settlement chevron */}
       <path
         d="M18 11 L23 16 L18 21"
-        stroke={color ? color : `url(#${gradId})`}
+        stroke={stroke}
         strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -82,6 +88,8 @@ interface LogoProps {
 /**
  * Full EarlyPay logo — composable SVG lockup.
  * Renders inline — no network request, no flash of missing image.
+ * Text uses `fill="var(--ink)"` and `fill="var(--accent)"` so it adapts
+ * to the active theme without JS.
  */
 export function EarlyPayLogo({ variant = 'primary', height = 28, className }: LogoProps) {
   if (variant === 'mark') {
@@ -102,19 +110,13 @@ export function EarlyPayLogo({ variant = 'primary', height = 28, className }: Lo
         aria-label="EarlyPay"
         role="img"
       >
-        <defs>
-          <linearGradient id="ep-wm-g" x1="0" y1="0" x2="100%" y2="0" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#f9faf3" />
-            <stop offset="60%" stopColor="#e3ecf9" />
-          </linearGradient>
-        </defs>
         <text
           y={height * 0.76}
           fontFamily="'Space Grotesk', 'DM Sans', sans-serif"
           fontWeight="700"
           fontSize={fontSize}
           letterSpacing="-0.03em"
-          fill="#f9faf3"
+          fill="var(--ink)"
         >
           Early
         </text>
@@ -125,7 +127,7 @@ export function EarlyPayLogo({ variant = 'primary', height = 28, className }: Lo
           fontWeight="700"
           fontSize={fontSize}
           letterSpacing="-0.03em"
-          fill="#acc6e9"
+          fill="var(--accent)"
         >
           Pay
         </text>
@@ -134,9 +136,10 @@ export function EarlyPayLogo({ variant = 'primary', height = 28, className }: Lo
   }
 
   // primary: mark + wordmark side-by-side
-  const gap = height * 0.32
+  const gap   = height * 0.32
   const wordW = fontSize * 5.1
   const totalW = markSize + gap + wordW
+  const gradId = 'ep-pm-g'
 
   return (
     <svg
@@ -150,9 +153,9 @@ export function EarlyPayLogo({ variant = 'primary', height = 28, className }: Lo
       role="img"
     >
       <defs>
-        <linearGradient id="ep-pm-g" x1="0" y1="0" x2={markSize} y2={markSize} gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#cbd8f0" />
-          <stop offset="100%" stopColor="#acc6e9" />
+        <linearGradient id={gradId} x1="0" y1="0" x2={markSize} y2={markSize} gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="var(--accent-hover)" />
+          <stop offset="100%" stopColor="var(--accent)" />
         </linearGradient>
       </defs>
 
@@ -162,7 +165,7 @@ export function EarlyPayLogo({ variant = 'primary', height = 28, className }: Lo
         {/* Left bracket */}
         <path
           d="M10 7 L7 7 L7 25 L10 25"
-          stroke="url(#ep-pm-g)"
+          stroke={`url(#${gradId})`}
           strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -170,17 +173,17 @@ export function EarlyPayLogo({ variant = 'primary', height = 28, className }: Lo
         {/* Right bracket */}
         <path
           d="M22 7 L25 7 L25 25 L22 25"
-          stroke="url(#ep-pm-g)"
+          stroke={`url(#${gradId})`}
           strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         {/* Arrow fill */}
-        <path d="M13 16 L18 11 L18 21 Z" fill="url(#ep-pm-g)" opacity="0.35" />
+        <path d="M13 16 L18 11 L18 21 Z" fill={`url(#${gradId})`} opacity="0.35" />
         {/* Arrow stroke */}
         <path
           d="M18 11 L23 16 L18 21"
-          stroke="url(#ep-pm-g)"
+          stroke={`url(#${gradId})`}
           strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -195,7 +198,7 @@ export function EarlyPayLogo({ variant = 'primary', height = 28, className }: Lo
         fontWeight="700"
         fontSize={fontSize}
         letterSpacing="-0.03em"
-        fill="#f9faf3"
+        fill="var(--ink)"
       >
         Early
       </text>
@@ -206,7 +209,7 @@ export function EarlyPayLogo({ variant = 'primary', height = 28, className }: Lo
         fontWeight="700"
         fontSize={fontSize}
         letterSpacing="-0.03em"
-        fill="#acc6e9"
+        fill="var(--accent)"
       >
         Pay
       </text>

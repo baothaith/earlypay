@@ -84,7 +84,7 @@ export function Footer() {
     <footer
       aria-label="Site footer"
       style={{
-        background: '#080f1c',
+        background: 'var(--footer-bg)',
         borderTop: '1px solid var(--border)',
         marginTop: 'auto',
       }}
@@ -94,7 +94,7 @@ export function Footer() {
         aria-hidden="true"
         style={{
           height: 48,
-          background: 'linear-gradient(to bottom, transparent, #080f1c)',
+          background: 'var(--footer-gradient)',
           marginTop: -48,
           pointerEvents: 'none',
           position: 'relative',

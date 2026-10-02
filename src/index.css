@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Arc Dark design tokens ──────────────────────────────────────────────── */
+/* ── Arc Dark design tokens (default) ───────────────────────────────────── */
 :root {
   /* Canvas */
   --bg:              #080f1c;
@@ -60,6 +60,83 @@
   /* Layout */
   --navbar-h:        56px;
   --sidebar-w:       272px;
+
+  /* Theme-specific opaque surfaces (used for modal/sheet backgrounds) */
+  --surface-panel:   #0c1724;
+  --navbar-bg:       rgba(8,15,28,0.82);
+  --navbar-bg-docs:  rgba(8,15,28,0.92);
+  --overlay-bg:      rgba(4,9,18,0.72);
+  --footer-bg:       #080f1c;
+  --footer-gradient: linear-gradient(to bottom, transparent, #080f1c);
+
+  /* On-accent text (always dark regardless of theme) */
+  --on-accent:       #07111f;
+
+  /* datetime-local color scheme */
+  --date-color-scheme: dark;
+}
+
+/* ── Arc Light design tokens ─────────────────────────────────────────────── */
+[data-theme="light"] {
+  /* Canvas */
+  --bg:              #f0f4fa;
+  --bg-mid:          #e8eef8;
+  --bg-gradient:     linear-gradient(160deg, #eef2fb 0%, #e8eef8 55%, #dde6f5 100%);
+
+  /* Surfaces */
+  --surface:         rgba(255,255,255,0.80);
+  --surface-hover:   rgba(255,255,255,0.95);
+  --surface-strong:  rgba(255,255,255,1.0);
+  --surface-muted:   #f7f9fd;
+  --surface-inset:   #eef2fb;
+
+  /* Borders */
+  --border:          rgba(30,60,100,0.12);
+  --border-strong:   rgba(30,80,150,0.25);
+  --border-accent:   rgba(30,90,180,0.40);
+
+  /* Ink */
+  --ink:             #0d1b2f;
+  --ink-2:           #1e3252;
+  --muted:           #3d5a7a;
+  --subtle:          #6b84a0;
+  --ghost:           #a0b4cc;
+
+  /* Brand accent — deeper blue for light bg */
+  --accent:          #1d5ca8;
+  --accent-dim:      rgba(29,92,168,0.10);
+  --accent-hover:    #164887;
+
+  /* Semantic — slightly richer on light */
+  --success:         #1a9e3c;
+  --success-dim:     rgba(26,158,60,0.10);
+  --success-border:  rgba(26,158,60,0.22);
+  --danger:          #c8303e;
+  --danger-dim:      rgba(200,48,62,0.10);
+  --danger-border:   rgba(200,48,62,0.22);
+  --warning:         #b5780c;
+  --warning-dim:     rgba(181,120,12,0.10);
+  --warning-border:  rgba(181,120,12,0.25);
+
+  /* Elevation shadows (lighter on white bg) */
+  --shadow-sm:       0 1px 3px rgba(0,30,80,0.08), 0 1px 2px rgba(0,30,80,0.05);
+  --shadow-md:       0 4px 16px rgba(0,30,80,0.10), 0 1px 4px rgba(0,30,80,0.06);
+  --shadow-lg:       0 12px 40px rgba(0,30,80,0.14), 0 4px 16px rgba(0,30,80,0.08);
+  --shadow-sheet:    0 -8px 48px rgba(0,30,80,0.12), 0 0 0 1px var(--border);
+
+  /* Theme-specific opaque surfaces */
+  --surface-panel:   #ffffff;
+  --navbar-bg:       rgba(240,244,250,0.88);
+  --navbar-bg-docs:  rgba(240,244,250,0.96);
+  --overlay-bg:      rgba(10,25,55,0.55);
+  --footer-bg:       #dce4f0;
+  --footer-gradient: linear-gradient(to bottom, transparent, #dce4f0);
+
+  /* On-accent text */
+  --on-accent:       #ffffff;
+
+  /* datetime-local color scheme */
+  --date-color-scheme: light;
 }
 
 /* ── Reset ───────────────────────────────────────────────────────────────── */
@@ -126,8 +203,8 @@ input[type="datetime-local"]:focus {
 
 input::placeholder { color: var(--ghost); }
 
-/* datetime-local dark color scheme */
-input[type="datetime-local"] { color-scheme: dark; }
+/* datetime-local: respect theme color scheme */
+input[type="datetime-local"] { color-scheme: var(--date-color-scheme); }
 
 /* Remove number input spinners */
 input[type="number"]::-webkit-outer-spin-button,
@@ -197,7 +274,7 @@ input[type="number"] { -moz-appearance: textfield; }
 
 .btn-primary {
   background: var(--accent);
-  color: #07111f;
+  color: var(--on-accent);
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 .btn-primary:not(:disabled):hover { background: var(--accent-hover); box-shadow: 0 2px 8px rgba(172,198,233,0.2); }
@@ -225,7 +302,7 @@ input[type="number"] { -moz-appearance: textfield; }
 
 /* ── Toasts ──────────────────────────────────────────────────────────────── */
 [data-sonner-toast] {
-  background: #1a2a3e !important;
+  background: var(--surface-panel) !important;
   border: 1px solid var(--border-strong) !important;
   color: var(--ink) !important;
   box-shadow: var(--shadow-md) !important;
@@ -237,6 +314,11 @@ input[type="number"] { -moz-appearance: textfield; }
   top: calc(var(--navbar-h) + 24px);
   max-height: calc(100dvh - var(--navbar-h) - 48px);
   overflow-y: auto;
+}
+
+/* ── Theme transition — smooth switch, no layout flash ───────────────────── */
+html {
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* ── Footer ──────────────────────────────────────────────────────────────── */

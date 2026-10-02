@@ -143,7 +143,7 @@ export function Sidebar({ buyerCount, supplierCount, activeTab, onTabChange, onP
                 className="size-8 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{
                   background: activeTab === id ? 'var(--accent-dim)' : 'var(--surface-muted)',
-                  border: activeTab === id ? '1px solid rgba(172,198,233,0.2)' : '1px solid transparent',
+                  border: activeTab === id ? '1px solid var(--border-strong)' : '1px solid transparent',
                 }}
               >
                 <Icon className="size-4" style={{ color: activeTab === id ? 'var(--accent)' : 'var(--subtle)' }} />

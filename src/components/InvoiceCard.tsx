@@ -107,7 +107,7 @@ export function InvoiceCard({ invoice, role, onRefresh }: Props) {
       className="invoice-row"
       style={
         invoice.state === 'OPEN' && activeBps > 0
-          ? { borderColor: 'rgba(110,207,134,0.22)' }
+          ? { borderColor: 'var(--success-border)' }
           : undefined
       }
     >
@@ -304,7 +304,7 @@ export function InvoiceCard({ invoice, role, onRefresh }: Props) {
               className="rounded-xl overflow-hidden"
               style={{ background: 'var(--success-dim)', border: '1px solid var(--success-border)' }}
             >
-              <div className="divide-y" style={{ borderColor: 'rgba(110,207,134,0.15)' }}>
+              <div className="divide-y" style={{ borderColor: 'var(--success-border)' }}>
                 {[
                   { label: 'Rebate paid',  value: formatUsdc6(invoice.rebatePaid),   color: 'var(--success)' },
                   { label: 'Settled at',   value: formatDateTime(invoice.settledAt),  color: 'var(--muted)' },

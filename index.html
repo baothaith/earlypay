@@ -17,6 +17,18 @@
     <link rel="apple-touch-icon" href="/favicon.svg" />
   </head>
   <body>
+    <!-- Theme initialisation: apply before React renders to prevent flash -->
+    <script>
+      (function(){
+        try {
+          var saved = localStorage.getItem('ep-theme');
+          var theme = (saved === 'light' || saved === 'dark')
+            ? saved
+            : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch(e) {}
+      })();
+    </script>
     <!-- Built with Arc Studio — https://studio.arc.io -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
