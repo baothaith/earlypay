@@ -5,8 +5,11 @@
  * Usage:  bun run scripts/migrate.ts
  */
 import { readFileSync } from 'fs'
-import { join } from 'path'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
 import pg from 'pg'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const { Client } = pg
 
@@ -16,7 +19,7 @@ if (!url) {
   process.exit(1)
 }
 
-const sql = readFileSync(join(import.meta.dir, 'migrate.sql'), 'utf8')
+const sql = readFileSync(join(__dirname, 'migrate.sql'), 'utf8')
 
 const client = new Client({ connectionString: url })
 

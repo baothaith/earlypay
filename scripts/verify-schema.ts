@@ -5,11 +5,16 @@
 import pg from 'pg'
 const { Client } = pg
 
+interface TableRow    { table_name: string }
+interface IndexRow    { indexname: string }
+interface CountRow    { invoices: string; tiers: string; cursors: string; events: string }
+interface CursorRow   { chain_id: number; contract_address: string; last_block: number }
+
 const client = new Client({ connectionString: process.env.DATABASE_URL })
 await client.connect()
 
 // Tables
-const tables = await client.query(`
+const tables = await client.query<TableRow>(`
   SELECT table_name
   FROM information_schema.tables
   WHERE table_schema = 'earlypay'
@@ -17,7 +22,7 @@ const tables = await client.query(`
 `)
 
 // Indexes
-const indexes = await client.query(`
+const indexes = await client.query<IndexRow>(`
   SELECT indexname
   FROM pg_indexes
   WHERE schemaname = 'earlypay'
@@ -25,7 +30,7 @@ const indexes = await client.query(`
 `)
 
 // Row counts
-const counts = await client.query(`
+const counts = await client.query<CountRow>(`
   SELECT
     (SELECT COUNT(*) FROM earlypay.invoices)          AS invoices,
     (SELECT COUNT(*) FROM earlypay.invoice_tiers)     AS tiers,
@@ -34,7 +39,7 @@ const counts = await client.query(`
 `)
 
 // Sync cursor seed
-const cursor = await client.query(`
+const cursor = await client.query<CursorRow>(`
   SELECT chain_id, contract_address, last_block
   FROM earlypay.sync_cursors
 `)

@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAccount, useSwitchChain } from 'wagmi'
 import { ConnectKitButton } from 'connectkit'
-import { Plus, RefreshCw, AlertTriangle, LayoutDashboard } from 'lucide-react'
+import { Plus, RefreshCw, AlertTriangle, LayoutDashboard, BookOpen } from 'lucide-react'
 
 import { useInvoiceList } from '@/hooks/useInvoiceList'
 import { InvoiceCard } from '@/components/InvoiceCard'
 import { PostInvoiceSheet } from '@/components/PostInvoiceSheet'
 import { Sidebar } from '@/components/Sidebar'
 import { EarlyPayLogo, LogoMark } from '@/components/Logo'
+import { DocsViewer } from '@/components/DocsViewer'
 import { ARC_TESTNET_CHAIN_ID } from '@/lib/constants'
 
 type Tab = 'buyer' | 'supplier'
@@ -19,6 +20,16 @@ export default function App() {
 
   const [tab, setTab] = useState<Tab>('buyer')
   const [sheetOpen, setSheetOpen] = useState(false)
+
+  // Hash-based docs route: #/docs opens the viewer
+  const [docsOpen, setDocsOpen] = useState(() => window.location.hash === '#/docs')
+  useEffect(() => {
+    const handler = () => setDocsOpen(window.location.hash === '#/docs')
+    window.addEventListener('hashchange', handler)
+    return () => window.removeEventListener('hashchange', handler)
+  }, [])
+  function openDocs()  { window.location.hash = '#/docs' }
+  function closeDocs() { window.location.hash = '' }
 
   const buyerData    = useInvoiceList(address, 'buyer')
   const supplierData = useInvoiceList(address, 'supplier')
@@ -61,6 +72,16 @@ export default function App() {
 
         {/* Right: actions */}
         <div className="flex items-center gap-2.5">
+          {/* Docs button — always visible */}
+          <button
+            onClick={openDocs}
+            className="btn btn-ghost btn-sm gap-1.5"
+            title="Documentation"
+          >
+            <BookOpen className="size-3.5" />
+            <span className="hidden md:inline">Docs</span>
+          </button>
+
           {isConnected && (
             <>
               <button
@@ -322,6 +343,9 @@ export default function App() {
           handleRefresh()
         }}
       />
+
+      {/* ── Docs Viewer ──────────────────────────────────────────────────────── */}
+      {docsOpen && <DocsViewer onClose={closeDocs} />}
     </div>
   )
 }
