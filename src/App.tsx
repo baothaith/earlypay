@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useAccount, useSwitchChain } from 'wagmi'
 import { ConnectKitButton } from 'connectkit'
-import { Plus, RefreshCw, AlertTriangle, LayoutDashboard, BookOpen, Sun, Moon, Copy, Check } from 'lucide-react'
+import {
+  Plus, RefreshCw, AlertTriangle, LayoutDashboard,
+  BookOpen, Sun, Moon, Copy, Check,
+} from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
-
 import { useInvoiceList } from '@/hooks/useInvoiceList'
 import { InvoiceCard } from '@/components/InvoiceCard'
 import { PostInvoiceSheet } from '@/components/PostInvoiceSheet'
-import { Sidebar } from '@/components/Sidebar'
+import { SideNav } from '@/components/SideNav'
 import { DashboardSummary } from '@/components/DashboardSummary'
 import { EarlyPayLogo, LogoMark } from '@/components/Logo'
 import { DocsViewer } from '@/components/DocsViewer'
@@ -26,8 +28,8 @@ const FILTER_LABELS: { id: FilterState; label: string }[] = [
 ]
 
 const _NOW_SECS = BigInt(Math.floor(Date.now() / 1000))
+void _NOW_SECS
 
-/** Small copy-address button used in navbar/empty state */
 function CopyAddressButton({ address }: { address: string }) {
   const [copied, setCopied] = useState(false)
   function handle() {
@@ -43,7 +45,9 @@ function CopyAddressButton({ address }: { address: string }) {
       title="Copy wallet address"
       aria-label={copied ? 'Copied!' : 'Copy your wallet address'}
     >
-      {copied ? <Check className="size-3.5" style={{ color: 'var(--success)' }} /> : <Copy className="size-3.5" />}
+      {copied
+        ? <Check className="size-3.5" style={{ color: 'var(--success)' }} />
+        : <Copy className="size-3.5" />}
       <span className="hidden md:inline">{copied ? 'Copied!' : 'Copy Address'}</span>
     </button>
   )
@@ -59,7 +63,6 @@ export default function App() {
   const [filter, setFilter] = useState<FilterState>('ALL')
   const [sheetOpen, setSheetOpen] = useState(false)
 
-  // Reset filter when switching tabs
   function handleTabChange(t: Tab) { setTab(t); setFilter('ALL') }
 
   // Hash-based docs route
@@ -74,27 +77,18 @@ export default function App() {
 
   const buyerData    = useInvoiceList(address, 'buyer')
   const supplierData = useInvoiceList(address, 'supplier')
+  const activeData   = tab === 'buyer' ? buyerData : supplierData
+  const role         = tab === 'buyer' ? 'buyer' : 'supplier'
 
-  const activeData = tab === 'buyer' ? buyerData : supplierData
-  const role       = tab === 'buyer' ? 'buyer' : 'supplier'
+  function handleRefresh() { buyerData.refetch(); supplierData.refetch() }
 
-  function handleRefresh() {
-    buyerData.refetch()
-    supplierData.refetch()
-  }
-
-  // Filtered invoices for the feed
   const filteredInvoices = useMemo<InvoiceData[]>(() => {
     const list = activeData.invoices
-    if (filter === 'ALL') return list
-    if (filter === 'OPEN') {
-      // OPEN = state is OPEN (includes overdue — they are technically OPEN until expired on-chain)
-      return list.filter((i) => i.state === 'OPEN')
-    }
+    if (filter === 'ALL')    return list
+    if (filter === 'OPEN')   return list.filter((i) => i.state === 'OPEN')
     return list.filter((i) => i.state === filter)
   }, [activeData.invoices, filter])
 
-  // Count per state for filter pill badges
   const stateCounts = useMemo(() => {
     const list = activeData.invoices
     return {
@@ -108,9 +102,11 @@ export default function App() {
   return (
     <div className="min-h-dvh flex flex-col" style={{ background: 'var(--bg-gradient)' }}>
 
-      {/* ── Navbar ── */}
+      {/* ════════════════════════════════════════════
+          TOP BAR — brand · primary nav · user controls
+          No action buttons here. Clean signal-to-noise.
+      ════════════════════════════════════════════ */}
       <header
-        className="flex items-center justify-between px-5 lg:px-8 gap-4 flex-shrink-0"
         style={{
           height: 'var(--navbar-h)',
           background: 'var(--navbar-bg)',
@@ -118,63 +114,95 @@ export default function App() {
           borderBottom: '1px solid var(--border)',
           position: 'sticky',
           top: 0,
-          zIndex: 40,
+          zIndex: 50,
         }}
       >
-        {/* Left */}
-        <div className="flex items-center gap-3">
-          <EarlyPayLogo height={24} />
-          <span
-            className="hidden sm:inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-md font-medium"
-            style={{ background: 'var(--surface-muted)', color: 'var(--subtle)', border: '1px solid var(--border)' }}
-          >
-            <span className="size-1.5 rounded-full inline-block" style={{ background: 'var(--success)' }} />
-            Arc Testnet
-          </span>
-        </div>
+        <div
+          className="flex items-center justify-between h-full"
+          style={{ padding: '0 var(--layout-px)' }}
+        >
+          {/* ── Left: brand ── */}
+          <div className="flex items-center gap-3">
+            <EarlyPayLogo height={22} />
+            <span
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-md font-medium"
+              style={{
+                background: 'var(--surface-muted)',
+                color: 'var(--subtle)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <span className="size-1.5 rounded-full inline-block" style={{ background: 'var(--success)' }} />
+              Arc Testnet
+            </span>
+          </div>
 
-        {/* Right */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={toggleTheme}
-            className="btn btn-ghost btn-sm size-8 p-0"
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-          >
-            {theme === 'dark' ? <Sun className="size-3.5" aria-hidden /> : <Moon className="size-3.5" aria-hidden />}
-          </button>
-
-          <button onClick={openDocs} className="btn btn-ghost btn-sm gap-1.5" title="Documentation">
-            <BookOpen className="size-3.5" />
-            <span className="hidden md:inline">Docs</span>
-          </button>
-
-          {isConnected && address && (
-            <>
-              <CopyAddressButton address={address} />
-              <button onClick={handleRefresh} className="btn btn-ghost btn-sm" title="Refresh invoices">
-                <RefreshCw className="size-3.5" />
-                <span className="hidden md:inline">Refresh</span>
+          {/* ── Centre: primary nav (desktop only) ── */}
+          {isConnected && (
+            <nav className="hidden md:flex items-center gap-1" aria-label="Primary navigation">
+              <button
+                onClick={() => { if (docsOpen) closeDocs() }}
+                className="nav-link"
+                aria-current={!docsOpen ? 'page' : undefined}
+              >
+                <LayoutDashboard className="size-3.5" aria-hidden />
+                Dashboard
               </button>
-              <button onClick={() => setSheetOpen(true)} className="btn btn-primary">
-                <Plus className="size-4" />
-                <span className="hidden sm:inline">Post Invoice</span>
+              <button
+                onClick={openDocs}
+                className="nav-link"
+                aria-current={docsOpen ? 'page' : undefined}
+              >
+                <BookOpen className="size-3.5" aria-hidden />
+                Docs
               </button>
-            </>
+            </nav>
           )}
-          <ConnectKitButton />
+
+          {/* ── Right: user controls ── */}
+          <div className="flex items-center gap-1.5">
+            {/* Docs link on mobile (when connected) */}
+            {isConnected && (
+              <button
+                onClick={docsOpen ? closeDocs : openDocs}
+                className="btn btn-ghost btn-sm md:hidden"
+                title="Documentation"
+                aria-label="Open documentation"
+              >
+                <BookOpen className="size-3.5" />
+              </button>
+            )}
+
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="btn btn-ghost btn-sm size-8 p-0"
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            >
+              {theme === 'dark'
+                ? <Sun  className="size-3.5" aria-hidden />
+                : <Moon className="size-3.5" aria-hidden />}
+            </button>
+
+            <ConnectKitButton />
+          </div>
         </div>
       </header>
 
-      {/* ── Wrong-chain banner (blocks interaction) ── */}
+      {/* ── Wrong-chain banner ── */}
       {wrongChain && (
         <div
-          className="flex items-center gap-3 px-5 lg:px-8 py-2.5 text-sm"
-          style={{ background: 'var(--warning-dim)', borderBottom: '1px solid var(--warning-border)' }}
+          className="flex items-center gap-3 text-sm"
+          style={{
+            padding: '10px var(--layout-px)',
+            background: 'var(--warning-dim)',
+            borderBottom: '1px solid var(--warning-border)',
+          }}
         >
           <AlertTriangle className="size-4 flex-shrink-0" style={{ color: 'var(--warning)' }} />
           <span style={{ color: 'var(--warning)' }}>
-            You're on the wrong network. Switch to <strong>Arc Testnet</strong> to interact with invoices.
+            Wrong network. Switch to <strong>Arc Testnet</strong> to interact.
           </span>
           <button
             onClick={() => switchChain({ chainId: ARC_TESTNET_CHAIN_ID })}
@@ -186,14 +214,20 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Body ── */}
+      {/* ════════════════════════════════════════════
+          BODY
+      ════════════════════════════════════════════ */}
       {!isConnected ? (
 
         /* ── Landing ── */
         <div className="flex flex-col items-center justify-center flex-1 px-4 py-16">
           <div
             className="w-full max-w-lg rounded-3xl p-10 text-center space-y-6"
-            style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-lg)',
+            }}
           >
             <div
               className="mx-auto size-20 rounded-3xl flex items-center justify-center"
@@ -245,41 +279,42 @@ export default function App() {
 
       ) : (
 
-        /* ── Dashboard ── */
-        <div
-          className="flex-1 w-full mx-auto px-4 sm:px-5 lg:px-8 py-6 lg:py-8"
-          style={{ maxWidth: '1440px' }}
-        >
-          <style>{`
-            @media (min-width: 1024px) {
-              .dashboard-grid { grid-template-columns: var(--sidebar-w) 1fr !important; }
-            }
-          `}</style>
-          <div
-            className="dashboard-grid"
-            style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', alignItems: 'start' }}
+        /* ════════════════════════════════════════════
+            DASHBOARD — side nav + content
+        ════════════════════════════════════════════ */
+        <div className="flex flex-1 min-h-0">
+
+          {/* ── Side Navigation Panel ── */}
+          <SideNav
+            buyerCount={buyerData.count}
+            supplierCount={supplierData.count}
+            activeTab={tab}
+            onTabChange={handleTabChange}
+            onPost={() => setSheetOpen(true)}
+            onOpenDocs={openDocs}
+            docsActive={docsOpen}
+          />
+
+          {/* ── Main content ── */}
+          <main
+            className="flex-1 min-w-0 flex flex-col overflow-y-auto"
+            style={{ maxHeight: 'calc(100dvh - var(--navbar-h))' }}
           >
-            {/* Sidebar */}
-            <aside className="sidebar-sticky">
-              <Sidebar
-                buyerCount={buyerData.count}
-                supplierCount={supplierData.count}
-                activeTab={tab}
-                onTabChange={handleTabChange}
-                onPost={() => setSheetOpen(true)}
-              />
-            </aside>
+            <div
+              className="flex-1"
+              style={{ padding: 'var(--content-py) var(--content-px)' }}
+            >
 
-            {/* Main feed */}
-            <main className="min-w-0">
-
-              {/* Feed header */}
-              <div className="flex items-center justify-between gap-3 mb-4">
+              {/* Content header */}
+              <div
+                className="flex items-center justify-between gap-3 mb-5"
+                style={{ paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}
+              >
                 <div className="flex items-center gap-2.5">
                   <LayoutDashboard className="size-4 flex-shrink-0" style={{ color: 'var(--subtle)' }} />
-                  <h2 className="display font-semibold text-base" style={{ color: 'var(--ink)' }}>
+                  <h1 className="display font-semibold text-base m-0" style={{ color: 'var(--ink)' }}>
                     {tab === 'buyer' ? 'Invoices Posted' : 'Invoices to Settle'}
-                  </h2>
+                  </h1>
                   <span
                     className="text-xs px-2 py-0.5 rounded-full font-semibold"
                     style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}
@@ -287,34 +322,61 @@ export default function App() {
                     {activeData.count}
                   </span>
                 </div>
-                {/* Mobile tab switcher */}
-                <div
-                  className="flex lg:hidden rounded-xl p-0.5 gap-0.5"
-                  style={{ background: 'var(--surface-muted)' }}
-                >
-                  {(['buyer', 'supplier'] as Tab[]).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => handleTabChange(t)}
-                      className="rounded-lg px-3 py-1 text-xs font-semibold capitalize transition-all"
-                      style={{
-                        background: tab === t ? 'var(--surface-strong)' : 'transparent',
-                        color: tab === t ? 'var(--ink)' : 'var(--subtle)',
-                        border: tab === t ? '1px solid var(--border-strong)' : '1px solid transparent',
-                      }}
-                    >
-                      {t}
-                    </button>
-                  ))}
+
+                {/* Right: actions + mobile tab switcher */}
+                <div className="flex items-center gap-2">
+                  {/* Mobile tab switcher (sidebar hidden on mobile) */}
+                  <div
+                    className="flex lg:hidden rounded-xl p-0.5 gap-0.5"
+                    style={{ background: 'var(--surface-muted)' }}
+                  >
+                    {(['buyer', 'supplier'] as Tab[]).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => handleTabChange(t)}
+                        className="rounded-lg px-3 py-1 text-xs font-semibold capitalize transition-all"
+                        style={{
+                          background: tab === t ? 'var(--surface-strong)' : 'transparent',
+                          color: tab === t ? 'var(--ink)' : 'var(--subtle)',
+                          border: tab === t ? '1px solid var(--border-strong)' : '1px solid transparent',
+                        }}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Copy address */}
+                  {address && <CopyAddressButton address={address} />}
+
+                  {/* Refresh */}
+                  <button
+                    onClick={handleRefresh}
+                    className="btn btn-ghost btn-sm"
+                    title="Refresh invoices"
+                    aria-label="Refresh invoices"
+                  >
+                    <RefreshCw className="size-3.5" />
+                    <span className="hidden sm:inline">Refresh</span>
+                  </button>
+
+                  {/* Post Invoice (mobile — sidebar hidden) */}
+                  <button
+                    onClick={() => setSheetOpen(true)}
+                    className="btn btn-primary btn-sm lg:hidden"
+                  >
+                    <Plus className="size-3.5" />
+                    <span className="hidden sm:inline">Post Invoice</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Dashboard summary (only when invoices loaded) */}
+              {/* Dashboard summary tiles */}
               {!activeData.isLoading && activeData.invoices.length > 0 && (
                 <DashboardSummary tab={tab} invoices={activeData.invoices} />
               )}
 
-              {/* Wrong-network dim overlay on invoice list */}
+              {/* Wrong-network overlay */}
               <div className="relative">
                 {wrongChain && (
                   <div
@@ -341,7 +403,7 @@ export default function App() {
                 {!activeData.isLoading && activeData.invoices.length > 0 && (
                   <div className="flex items-center gap-1.5 flex-wrap mb-3">
                     {FILTER_LABELS.map(({ id, label }) => {
-                      const count = stateCounts[id]
+                      const count  = stateCounts[id]
                       const active = filter === id
                       return (
                         <button
@@ -374,7 +436,7 @@ export default function App() {
                 {/* Invoice list / states */}
                 {activeData.isLoading ? (
                   <div className="space-y-2.5">
-                    {[1, 2, 3, 4].map((i) => (
+                    {[0, 1, 2, 3].map((i) => (
                       <div
                         key={i}
                         className="h-16 rounded-2xl skeleton-shimmer"
@@ -384,7 +446,6 @@ export default function App() {
                   </div>
 
                 ) : activeData.invoices.length === 0 ? (
-                  /* Empty state — no invoices at all */
                   <div
                     className="rounded-2xl p-10 text-center space-y-4"
                     style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
@@ -402,7 +463,7 @@ export default function App() {
                       <p className="text-xs max-w-xs mx-auto" style={{ color: 'var(--subtle)', lineHeight: 1.6 }}>
                         {tab === 'buyer'
                           ? 'Post your first invoice to lock collateral and offer early-payment discounts to your supplier.'
-                          : 'Invoices where you are the registered supplier will appear here. Share your wallet address with buyers to be assigned.'}
+                          : 'Invoices where you are the registered supplier will appear here. Share your wallet address with buyers.'}
                       </p>
                     </div>
                     {tab === 'buyer' ? (
@@ -425,7 +486,6 @@ export default function App() {
                   </div>
 
                 ) : filteredInvoices.length === 0 ? (
-                  /* Empty state — filter has no results */
                   <div
                     className="rounded-2xl p-8 text-center"
                     style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
@@ -433,17 +493,15 @@ export default function App() {
                     <p className="text-sm font-semibold mb-1" style={{ color: 'var(--muted)' }}>
                       No {filter.toLowerCase()} invoices
                     </p>
-                    <p className="text-xs" style={{ color: 'var(--subtle)' }}>
-                      {filter !== 'ALL' ? (
-                        <button
-                          onClick={() => setFilter('ALL')}
-                          className="underline"
-                          style={{ color: 'var(--accent)' }}
-                        >
-                          Show all {activeData.count} invoices
-                        </button>
-                      ) : null}
-                    </p>
+                    {filter !== 'ALL' && (
+                      <button
+                        onClick={() => setFilter('ALL')}
+                        className="text-xs underline"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        Show all {activeData.count} invoices
+                      </button>
+                    )}
                   </div>
 
                 ) : (
@@ -459,18 +517,21 @@ export default function App() {
                   </div>
                 )}
               </div>
-            </main>
-          </div>
+            </div>
+
+            <Footer />
+          </main>
         </div>
       )}
+
+      {/* Landing footer (when not connected) */}
+      {!isConnected && <Footer />}
 
       <PostInvoiceSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
         onSuccess={() => { setSheetOpen(false); handleRefresh() }}
       />
-
-      <Footer />
 
       {docsOpen && <DocsViewer onClose={closeDocs} />}
     </div>
