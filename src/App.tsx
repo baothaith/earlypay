@@ -1,19 +1,53 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAccount, useSwitchChain } from 'wagmi'
 import { ConnectKitButton } from 'connectkit'
-import { Plus, RefreshCw, AlertTriangle, LayoutDashboard, BookOpen, Sun, Moon } from 'lucide-react'
+import { Plus, RefreshCw, AlertTriangle, LayoutDashboard, BookOpen, Sun, Moon, Copy, Check } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 
 import { useInvoiceList } from '@/hooks/useInvoiceList'
 import { InvoiceCard } from '@/components/InvoiceCard'
 import { PostInvoiceSheet } from '@/components/PostInvoiceSheet'
 import { Sidebar } from '@/components/Sidebar'
+import { DashboardSummary } from '@/components/DashboardSummary'
 import { EarlyPayLogo, LogoMark } from '@/components/Logo'
 import { DocsViewer } from '@/components/DocsViewer'
 import { Footer } from '@/components/Footer'
 import { ARC_TESTNET_CHAIN_ID } from '@/lib/constants'
+import { InvoiceData } from '@/lib/discountVault'
 
-type Tab = 'buyer' | 'supplier'
+type Tab         = 'buyer' | 'supplier'
+type FilterState = 'ALL' | 'OPEN' | 'SETTLED' | 'EXPIRED'
+
+const FILTER_LABELS: { id: FilterState; label: string }[] = [
+  { id: 'ALL',     label: 'All' },
+  { id: 'OPEN',    label: 'Open' },
+  { id: 'SETTLED', label: 'Settled' },
+  { id: 'EXPIRED', label: 'Expired' },
+]
+
+const _NOW_SECS = BigInt(Math.floor(Date.now() / 1000))
+
+/** Small copy-address button used in navbar/empty state */
+function CopyAddressButton({ address }: { address: string }) {
+  const [copied, setCopied] = useState(false)
+  function handle() {
+    void navigator.clipboard.writeText(address).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    })
+  }
+  return (
+    <button
+      onClick={handle}
+      className="btn btn-ghost btn-sm gap-1.5"
+      title="Copy wallet address"
+      aria-label={copied ? 'Copied!' : 'Copy your wallet address'}
+    >
+      {copied ? <Check className="size-3.5" style={{ color: 'var(--success)' }} /> : <Copy className="size-3.5" />}
+      <span className="hidden md:inline">{copied ? 'Copied!' : 'Copy Address'}</span>
+    </button>
+  )
+}
 
 export default function App() {
   const { address, chainId, isConnected } = useAccount()
@@ -21,10 +55,14 @@ export default function App() {
   const wrongChain = isConnected && chainId !== ARC_TESTNET_CHAIN_ID
   const { theme, toggleTheme } = useTheme()
 
-  const [tab, setTab] = useState<Tab>('buyer')
+  const [tab,    setTab]    = useState<Tab>('buyer')
+  const [filter, setFilter] = useState<FilterState>('ALL')
   const [sheetOpen, setSheetOpen] = useState(false)
 
-  // Hash-based docs route: #/docs opens the viewer
+  // Reset filter when switching tabs
+  function handleTabChange(t: Tab) { setTab(t); setFilter('ALL') }
+
+  // Hash-based docs route
   const [docsOpen, setDocsOpen] = useState(() => window.location.hash === '#/docs')
   useEffect(() => {
     const handler = () => setDocsOpen(window.location.hash === '#/docs')
@@ -45,10 +83,32 @@ export default function App() {
     supplierData.refetch()
   }
 
+  // Filtered invoices for the feed
+  const filteredInvoices = useMemo<InvoiceData[]>(() => {
+    const list = activeData.invoices
+    if (filter === 'ALL') return list
+    if (filter === 'OPEN') {
+      // OPEN = state is OPEN (includes overdue — they are technically OPEN until expired on-chain)
+      return list.filter((i) => i.state === 'OPEN')
+    }
+    return list.filter((i) => i.state === filter)
+  }, [activeData.invoices, filter])
+
+  // Count per state for filter pill badges
+  const stateCounts = useMemo(() => {
+    const list = activeData.invoices
+    return {
+      ALL:     list.length,
+      OPEN:    list.filter((i) => i.state === 'OPEN').length,
+      SETTLED: list.filter((i) => i.state === 'SETTLED').length,
+      EXPIRED: list.filter((i) => i.state === 'EXPIRED').length,
+    }
+  }, [activeData.invoices])
+
   return (
     <div className="min-h-dvh flex flex-col" style={{ background: 'var(--bg-gradient)' }}>
 
-      {/* ── Navbar ───────────────────────────────────────────────────────── */}
+      {/* ── Navbar ── */}
       <header
         className="flex items-center justify-between px-5 lg:px-8 gap-4 flex-shrink-0"
         style={{
@@ -61,7 +121,7 @@ export default function App() {
           zIndex: 40,
         }}
       >
-        {/* Left: logo + badge */}
+        {/* Left */}
         <div className="flex items-center gap-3">
           <EarlyPayLogo height={24} />
           <span
@@ -73,45 +133,30 @@ export default function App() {
           </span>
         </div>
 
-        {/* Right: actions */}
-        <div className="flex items-center gap-2.5">
-          {/* Theme toggle */}
+        {/* Right */}
+        <div className="flex items-center gap-2">
           <button
             onClick={toggleTheme}
             className="btn btn-ghost btn-sm size-8 p-0"
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
           >
-            {theme === 'dark'
-              ? <Sun  className="size-3.5" aria-hidden="true" />
-              : <Moon className="size-3.5" aria-hidden="true" />
-            }
+            {theme === 'dark' ? <Sun className="size-3.5" aria-hidden /> : <Moon className="size-3.5" aria-hidden />}
           </button>
 
-          {/* Docs button — always visible */}
-          <button
-            onClick={openDocs}
-            className="btn btn-ghost btn-sm gap-1.5"
-            title="Documentation"
-          >
+          <button onClick={openDocs} className="btn btn-ghost btn-sm gap-1.5" title="Documentation">
             <BookOpen className="size-3.5" />
             <span className="hidden md:inline">Docs</span>
           </button>
 
-          {isConnected && (
+          {isConnected && address && (
             <>
-              <button
-                onClick={handleRefresh}
-                className="btn btn-ghost btn-sm"
-                title="Refresh invoices"
-              >
+              <CopyAddressButton address={address} />
+              <button onClick={handleRefresh} className="btn btn-ghost btn-sm" title="Refresh invoices">
                 <RefreshCw className="size-3.5" />
                 <span className="hidden md:inline">Refresh</span>
               </button>
-              <button
-                onClick={() => setSheetOpen(true)}
-                className="btn btn-primary"
-              >
+              <button onClick={() => setSheetOpen(true)} className="btn btn-primary">
                 <Plus className="size-4" />
                 <span className="hidden sm:inline">Post Invoice</span>
               </button>
@@ -121,22 +166,19 @@ export default function App() {
         </div>
       </header>
 
-      {/* ── Wrong-chain banner ────────────────────────────────────────────── */}
+      {/* ── Wrong-chain banner (blocks interaction) ── */}
       {wrongChain && (
         <div
           className="flex items-center gap-3 px-5 lg:px-8 py-2.5 text-sm"
-          style={{
-            background: 'var(--warning-dim)',
-            borderBottom: '1px solid var(--warning-border)',
-          }}
+          style={{ background: 'var(--warning-dim)', borderBottom: '1px solid var(--warning-border)' }}
         >
           <AlertTriangle className="size-4 flex-shrink-0" style={{ color: 'var(--warning)' }} />
           <span style={{ color: 'var(--warning)' }}>
-            Switch to Arc Testnet to interact with invoices.
+            You're on the wrong network. Switch to <strong>Arc Testnet</strong> to interact with invoices.
           </span>
           <button
             onClick={() => switchChain({ chainId: ARC_TESTNET_CHAIN_ID })}
-            className="btn btn-sm ml-auto"
+            className="btn btn-sm ml-auto flex-shrink-0"
             style={{ background: 'var(--warning)', color: 'var(--on-accent)' }}
           >
             Switch Network
@@ -144,27 +186,21 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Body ─────────────────────────────────────────────────────────── */}
+      {/* ── Body ── */}
       {!isConnected ? (
-        /* ── Landing / connect state ──────────────────────────────────── */
+
+        /* ── Landing ── */
         <div className="flex flex-col items-center justify-center flex-1 px-4 py-16">
           <div
             className="w-full max-w-lg rounded-3xl p-10 text-center space-y-6"
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              boxShadow: 'var(--shadow-lg)',
-            }}
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}
           >
-            {/* Icon */}
             <div
               className="mx-auto size-20 rounded-3xl flex items-center justify-center"
               style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-strong)' }}
             >
               <LogoMark size={46} />
             </div>
-
-            {/* Logo lockup */}
             <div className="flex flex-col items-center gap-2">
               <EarlyPayLogo variant="primary" height={36} />
               <p className="text-sm max-w-xs mx-auto text-pretty" style={{ color: 'var(--muted)', lineHeight: 1.65 }}>
@@ -172,27 +208,17 @@ export default function App() {
                 and claim collateral-backed discounts. Fully automated, no approvers.
               </p>
             </div>
-
-            {/* Feature pills */}
             <div className="flex flex-wrap justify-center gap-2">
-              {[
-                { icon: '⬡', label: 'Trustless collateral lock' },
-                { icon: '↘', label: 'Time-decay tiers' },
-                { icon: '↺', label: 'Auto-expire refund' },
-              ].map(({ label }) => (
+              {['Trustless collateral lock', 'Time-decay tiers', 'Auto-expire refund'].map((label) => (
                 <span key={label} className="badge badge-muted">
                   <span className="size-1.5 rounded-full inline-block flex-shrink-0" style={{ background: 'var(--success)' }} />
                   {label}
                 </span>
               ))}
             </div>
-
-            {/* CTA */}
             <div className="pt-2">
               <ConnectKitButton label="Connect wallet to start" />
             </div>
-
-            {/* How it works */}
             <div className="pt-4 text-left space-y-3" style={{ borderTop: '1px solid var(--border)' }}>
               <div className="label-caps mb-3">How it works</div>
               {[
@@ -203,7 +229,7 @@ export default function App() {
                 <div key={n} className="flex gap-3">
                   <div
                     className="size-6 rounded-lg flex-shrink-0 flex items-center justify-center text-xs font-bold display"
-                    style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid rgba(172,198,233,0.2)' }}
+                    style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid var(--border-strong)' }}
                   >
                     {n}
                   </div>
@@ -216,18 +242,14 @@ export default function App() {
             </div>
           </div>
         </div>
+
       ) : (
-        /* ── Dashboard: sidebar + main feed ────────────────────────────── */
+
+        /* ── Dashboard ── */
         <div
-          className="flex-1 w-full mx-auto px-4 sm:px-5 lg:px-8 py-6 lg:py-8 gap-6 lg:gap-8"
-          style={{
-            maxWidth: '1440px',
-            display: 'grid',
-            gridTemplateColumns: '1fr',
-            alignItems: 'start',
-          }}
+          className="flex-1 w-full mx-auto px-4 sm:px-5 lg:px-8 py-6 lg:py-8"
+          style={{ maxWidth: '1440px' }}
         >
-          {/* Apply two-column on lg+ via inline style for server-less SSR compat */}
           <style>{`
             @media (min-width: 1024px) {
               .dashboard-grid { grid-template-columns: var(--sidebar-w) 1fr !important; }
@@ -235,31 +257,26 @@ export default function App() {
           `}</style>
           <div
             className="dashboard-grid"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr',
-              gap: '24px',
-              alignItems: 'start',
-              width: '100%',
-            }}
+            style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', alignItems: 'start' }}
           >
-            {/* ── Sidebar ── */}
+            {/* Sidebar */}
             <aside className="sidebar-sticky">
               <Sidebar
                 buyerCount={buyerData.count}
                 supplierCount={supplierData.count}
                 activeTab={tab}
-                onTabChange={setTab}
+                onTabChange={handleTabChange}
                 onPost={() => setSheetOpen(true)}
               />
             </aside>
 
-            {/* ── Main feed ── */}
-            <main className="min-w-0 space-y-4">
+            {/* Main feed */}
+            <main className="min-w-0">
+
               {/* Feed header */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2.5">
-                  <LayoutDashboard className="size-4" style={{ color: 'var(--subtle)' }} />
+                  <LayoutDashboard className="size-4 flex-shrink-0" style={{ color: 'var(--subtle)' }} />
                   <h2 className="display font-semibold text-base" style={{ color: 'var(--ink)' }}>
                     {tab === 'buyer' ? 'Invoices Posted' : 'Invoices to Settle'}
                   </h2>
@@ -278,7 +295,7 @@ export default function App() {
                   {(['buyer', 'supplier'] as Tab[]).map((t) => (
                     <button
                       key={t}
-                      onClick={() => setTab(t)}
+                      onClick={() => handleTabChange(t)}
                       className="rounded-lg px-3 py-1 text-xs font-semibold capitalize transition-all"
                       style={{
                         background: tab === t ? 'var(--surface-strong)' : 'transparent',
@@ -292,78 +309,169 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Invoice list */}
-              {activeData.isLoading ? (
-                <div className="space-y-2.5">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className="h-16 rounded-2xl animate-pulse"
-                      style={{ background: 'var(--surface)', animationDelay: `${i * 80}ms` }}
-                    />
-                  ))}
-                </div>
-              ) : activeData.invoices.length === 0 ? (
-                <div
-                  className="rounded-2xl p-12 text-center space-y-3"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                >
+              {/* Dashboard summary (only when invoices loaded) */}
+              {!activeData.isLoading && activeData.invoices.length > 0 && (
+                <DashboardSummary tab={tab} invoices={activeData.invoices} />
+              )}
+
+              {/* Wrong-network dim overlay on invoice list */}
+              <div className="relative">
+                {wrongChain && (
                   <div
-                    className="mx-auto size-12 rounded-2xl flex items-center justify-center"
-                    style={{ background: 'var(--surface-muted)' }}
+                    className="absolute inset-0 z-10 rounded-2xl flex items-center justify-center"
+                    style={{ background: 'var(--overlay-bg)', backdropFilter: 'blur(2px)' }}
                   >
-                    <LayoutDashboard className="size-5" style={{ color: 'var(--ghost)' }} />
+                    <div className="text-center space-y-3 p-6">
+                      <AlertTriangle className="size-8 mx-auto" style={{ color: 'var(--warning)' }} />
+                      <p className="text-sm font-semibold" style={{ color: 'var(--warning)' }}>
+                        Switch to Arc Testnet to view and interact with invoices
+                      </p>
+                      <button
+                        onClick={() => switchChain({ chainId: ARC_TESTNET_CHAIN_ID })}
+                        className="btn btn-sm mx-auto"
+                        style={{ background: 'var(--warning)', color: 'var(--on-accent)' }}
+                      >
+                        Switch Network
+                      </button>
+                    </div>
                   </div>
-                  <div>
+                )}
+
+                {/* Filter pills */}
+                {!activeData.isLoading && activeData.invoices.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                    {FILTER_LABELS.map(({ id, label }) => {
+                      const count = stateCounts[id]
+                      const active = filter === id
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => setFilter(id)}
+                          className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all"
+                          style={{
+                            background: active ? 'var(--surface-strong)' : 'var(--surface)',
+                            color: active ? 'var(--ink)' : 'var(--muted)',
+                            border: active ? '1px solid var(--border-strong)' : '1px solid var(--border)',
+                          }}
+                          aria-pressed={active}
+                        >
+                          {label}
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                            style={{
+                              background: active ? 'var(--accent-dim)' : 'var(--surface-muted)',
+                              color: active ? 'var(--accent)' : 'var(--subtle)',
+                            }}
+                          >
+                            {count}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* Invoice list / states */}
+                {activeData.isLoading ? (
+                  <div className="space-y-2.5">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className="h-16 rounded-2xl animate-pulse"
+                        style={{ background: 'var(--surface)', animationDelay: `${i * 80}ms` }}
+                      />
+                    ))}
+                  </div>
+
+                ) : activeData.invoices.length === 0 ? (
+                  /* Empty state — no invoices at all */
+                  <div
+                    className="rounded-2xl p-10 text-center space-y-4"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                  >
+                    <div
+                      className="mx-auto size-12 rounded-2xl flex items-center justify-center"
+                      style={{ background: 'var(--surface-muted)' }}
+                    >
+                      <LayoutDashboard className="size-5" style={{ color: 'var(--ghost)' }} />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+                        {tab === 'buyer' ? 'No invoices posted yet' : 'No invoices assigned to you'}
+                      </p>
+                      <p className="text-xs max-w-xs mx-auto" style={{ color: 'var(--subtle)', lineHeight: 1.6 }}>
+                        {tab === 'buyer'
+                          ? 'Post your first invoice to lock collateral and offer early-payment discounts to your supplier.'
+                          : 'Invoices where you are the registered supplier will appear here. Share your wallet address with buyers to be assigned.'}
+                      </p>
+                    </div>
+                    {tab === 'buyer' ? (
+                      <button onClick={() => setSheetOpen(true)} className="btn btn-primary btn-sm mx-auto">
+                        <Plus className="size-3.5" /> Post Invoice
+                      </button>
+                    ) : (
+                      address && (
+                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                          <code
+                            className="mono text-xs px-3 py-1.5 rounded-lg"
+                            style={{ background: 'var(--surface-muted)', color: 'var(--muted)', border: '1px solid var(--border)' }}
+                          >
+                            {address}
+                          </code>
+                          <CopyAddressButton address={address} />
+                        </div>
+                      )
+                    )}
+                  </div>
+
+                ) : filteredInvoices.length === 0 ? (
+                  /* Empty state — filter has no results */
+                  <div
+                    className="rounded-2xl p-8 text-center"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                  >
                     <p className="text-sm font-semibold mb-1" style={{ color: 'var(--muted)' }}>
-                      {tab === 'buyer' ? 'No invoices posted yet' : 'No invoices assigned to you'}
+                      No {filter.toLowerCase()} invoices
                     </p>
                     <p className="text-xs" style={{ color: 'var(--subtle)' }}>
-                      {tab === 'buyer'
-                        ? 'Post your first invoice to lock collateral and offer early-payment discounts.'
-                        : 'Invoices where you are the registered supplier will appear here.'}
+                      {filter !== 'ALL' ? (
+                        <button
+                          onClick={() => setFilter('ALL')}
+                          className="underline"
+                          style={{ color: 'var(--accent)' }}
+                        >
+                          Show all {activeData.count} invoices
+                        </button>
+                      ) : null}
                     </p>
                   </div>
-                  {tab === 'buyer' && (
-                    <button
-                      onClick={() => setSheetOpen(true)}
-                      className="btn btn-primary btn-sm mx-auto"
-                    >
-                      <Plus className="size-3.5" /> Post Invoice
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {[...activeData.invoices].reverse().map((inv) => (
-                    <InvoiceCard
-                      key={inv.id.toString()}
-                      invoice={inv}
-                      role={role}
-                      onRefresh={handleRefresh}
-                    />
-                  ))}
-                </div>
-              )}
+
+                ) : (
+                  <div className="space-y-2.5">
+                    {[...filteredInvoices].reverse().map((inv) => (
+                      <InvoiceCard
+                        key={inv.id.toString()}
+                        invoice={inv}
+                        role={role}
+                        onRefresh={handleRefresh}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </main>
           </div>
         </div>
       )}
 
-      {/* ── Post Invoice Sheet ─────────────────────────────────────────────── */}
       <PostInvoiceSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
-        onSuccess={() => {
-          setSheetOpen(false)
-          handleRefresh()
-        }}
+        onSuccess={() => { setSheetOpen(false); handleRefresh() }}
       />
 
-      {/* ── Footer ───────────────────────────────────────────────────────────── */}
       <Footer />
 
-      {/* ── Docs Viewer ──────────────────────────────────────────────────────── */}
       {docsOpen && <DocsViewer onClose={closeDocs} />}
     </div>
   )
