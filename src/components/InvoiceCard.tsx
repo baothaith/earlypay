@@ -223,19 +223,20 @@ export function InvoiceCard({ invoice, role, onRefresh }: Props) {
           </div>
         </div>
 
-        {/* Right column: expiry + settle button OR just chevron */}
+        {/* Right column: expiry + settle/expire buttons */}
         <div
-          className="hidden sm:flex items-center gap-2 flex-shrink-0"
+          className="flex items-center gap-2 flex-shrink-0"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Expiry — desktop only (mobile shows in address row) */}
           {invoice.state === 'OPEN' && (
-            <div className="flex items-center gap-1.5 text-xs" style={{ color: expiryColor }}>
+            <div className="hidden sm:flex items-center gap-1.5 text-xs" style={{ color: expiryColor }}>
               <Timer className="size-3.5 flex-shrink-0" />
               <span className="tabular-nums">{expiryLabel}</span>
             </div>
           )}
 
-          {/* Inline Settle Now — only for supplier, OPEN, not expired */}
+          {/* Inline Settle Now — supplier, OPEN, not expired */}
           {canSettle && (
             <button
               onClick={handleApproveAndSettle}
@@ -249,13 +250,13 @@ export function InvoiceCard({ invoice, role, onRefresh }: Props) {
               ) : (
                 <>
                   <Coins className="size-3.5" />
-                  Settle
+                  <span className="hidden xs:inline">Settle</span>
                 </>
               )}
             </button>
           )}
 
-          {/* Inline Expire button — overdue only */}
+          {/* Inline Expire button — overdue, any role */}
           {canExpire && !expanded && (
             <button
               onClick={(e) => { e.stopPropagation(); handleExpire() }}
@@ -263,7 +264,10 @@ export function InvoiceCard({ invoice, role, onRefresh }: Props) {
               className="btn btn-danger btn-sm"
               title="Expire invoice and return collateral to buyer"
             >
-              {expireLoading ? <Loader2 className="size-3.5 animate-spin" /> : 'Expire'}
+              {expireLoading
+                ? <Loader2 className="size-3.5 animate-spin" />
+                : <span className="hidden xs:inline">Expire</span>
+              }
             </button>
           )}
         </div>

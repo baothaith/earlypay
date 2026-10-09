@@ -389,6 +389,25 @@ export function PostInvoiceSheet({ open, onClose, onSuccess }: Props) {
                     </div>
                   ))}
 
+                  {/* Live tier monotonicity warning */}
+                  {tiers.length > 1 && (() => {
+                    const bpsArr = tiers.map(t => pctToBps(t.discountPct))
+                    const nonDecreasing = bpsArr.some((b, i) => i > 0 && b >= bpsArr[i - 1])
+                    const windowArr = tiers.map(t => t.windowEnd)
+                    const nonIncreasing = windowArr.some((w, i) => i > 0 && w && windowArr[i-1] && w <= windowArr[i-1])
+                    if (nonDecreasing || nonIncreasing) {
+                      return (
+                        <p className="flex items-start gap-1.5 text-xs rounded-lg px-3 py-2"
+                          style={{ background: 'var(--warning-dim)', border: '1px solid var(--warning-border)', color: 'var(--warning)' }}>
+                          <Info className="size-3 mt-0.5 flex-shrink-0" />
+                          {nonIncreasing
+                            ? 'Window-end dates must be in increasing order across tiers.'
+                            : 'Discount % must decrease from tier 1 → 2 → 3 (earlier tiers earn more).'}
+                        </p>
+                      )
+                    }
+                    return null
+                  })()}
                   <p className="flex items-start gap-1.5 text-xs" style={{ color: 'var(--subtle)' }}>
                     <Info className="size-3 mt-0.5 flex-shrink-0" />
                     Tiers must have increasing window-end times and decreasing discount %.

@@ -316,6 +316,50 @@ input[type="number"] { -moz-appearance: textfield; }
   overflow-y: auto;
 }
 
+/* ── Focus-visible rings ─────────────────────────────────────────────────── */
+.btn:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--border-accent);
+  outline-offset: 2px;
+}
+
+/* Invoice row keyboard focus */
+.invoice-row [role="button"]:focus-visible {
+  outline: 2px solid var(--border-accent);
+  outline-offset: -2px;
+  border-radius: var(--radius-xl);
+}
+
+/* ── Shimmer skeleton animation ──────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface)        0%,
+    var(--surface-strong) 40%,
+    var(--surface)        80%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* ── ConnectKit theme overrides ──────────────────────────────────────────── */
+[data-theme="light"] [data-testid="ck-connectbutton"] {
+  --ck-connectbutton-background:       var(--surface-strong) !important;
+  --ck-connectbutton-color:            var(--ink) !important;
+  --ck-connectbutton-border-color:     var(--border-strong) !important;
+  --ck-connectbutton-hover-background: var(--surface-hover) !important;
+}
+
 /* ── Theme transition — smooth switch, no layout flash ───────────────────── */
 html {
   transition: background-color 0.2s ease, color 0.2s ease;

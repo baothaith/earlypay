@@ -377,8 +377,8 @@ export default function App() {
                     {[1, 2, 3, 4].map((i) => (
                       <div
                         key={i}
-                        className="h-16 rounded-2xl animate-pulse"
-                        style={{ background: 'var(--surface)', animationDelay: `${i * 80}ms` }}
+                        className="h-16 rounded-2xl skeleton-shimmer"
+                        style={{ animationDelay: `${i * 120}ms` }}
                       />
                     ))}
                   </div>

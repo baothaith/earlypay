@@ -1,0 +1,13 @@
+{
+  "name": "EarlyPay",
+  "short_name": "EarlyPay",
+  "description": "Onchain B2B early-payment discounts. Trustless collateral, time-decay tiers, no approvers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1b2f",
+  "theme_color": "#0d1b2f",
+  "orientation": "any",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
